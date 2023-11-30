@@ -1,357 +1,547 @@
 'use strict';
 
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// BANKIST APP
+///////////////////////////////////////
+// Modal window
 
-// Data
-const account1 = {
-  owner: 'Jonas Schmedtmann',
-  movements: [200, 450, -400, 3000, -650, -130, 70, 1300],
-  interestRate: 1.2, // %
-  pin: 1111,
+const modal = document.querySelector('.modal');
+const overlay = document.querySelector('.overlay');
+const btnCloseModal = document.querySelector('.btn--close-modal');
+const btnsOpenModal = document.querySelectorAll('.btn--show-modal');
+
+const openModal = function (e) {
+  e.preventDefault(); // preventing default action of anchor tag
+  modal.classList.remove('hidden');
+  overlay.classList.remove('hidden');
 };
 
-const account2 = {
-  owner: 'Jessica Davis',
-  movements: [5000, 3400, -150, -790, -3210, -1000, 8500, -30],
-  interestRate: 1.5,
-  pin: 2222,
+const closeModal = function () {
+  modal.classList.add('hidden');
+  overlay.classList.add('hidden');
 };
 
-const account3 = {
-  owner: 'Steven Thomas Williams',
-  movements: [200, -200, 340, -300, -20, 50, 400, -460],
-  interestRate: 0.7,
-  pin: 3333,
-};
+btnsOpenModal.forEach(btn => btn.addEventListener('click', openModal));
 
-const account4 = {
-  owner: 'Sarah Smith',
-  movements: [430, 1000, 700, 50, 90],
-  interestRate: 1,
-  pin: 4444,
-};
+btnCloseModal.addEventListener('click', closeModal);
+overlay.addEventListener('click', closeModal);
 
-// all the accounts
-const accounts = [account1, account2, account3, account4];
-
-// Elements
-const labelWelcome = document.querySelector('.welcome');
-const labelDate = document.querySelector('.date');
-const labelBalance = document.querySelector('.balance__value');
-const labelSumIn = document.querySelector('.summary__value--in');
-const labelSumOut = document.querySelector('.summary__value--out');
-const labelSumInterest = document.querySelector('.summary__value--interest');
-const labelTimer = document.querySelector('.timer');
-
-const containerApp = document.querySelector('.app');
-const containerMovements = document.querySelector('.movements');
-
-const btnLogin = document.querySelector('.login__btn');
-const btnTransfer = document.querySelector('.form__btn--transfer');
-const btnLoan = document.querySelector('.form__btn--loan');
-const btnClose = document.querySelector('.form__btn--close');
-const btnSort = document.querySelector('.btn--sort');
-
-const inputLoginUsername = document.querySelector('.login__input--user');
-const inputLoginPin = document.querySelector('.login__input--pin');
-const inputTransferTo = document.querySelector('.form__input--to');
-const inputTransferAmount = document.querySelector('.form__input--amount');
-const inputLoanAmount = document.querySelector('.form__input--loan-amount');
-const inputCloseUsername = document.querySelector('.form__input--user');
-const inputClosePin = document.querySelector('.form__input--pin');
-
-////////////////////////////////////////////////
-const displayMovements = function (movements, sort = false) {
-  // first empty the movements container
-  containerMovements.innerHTML = ''; // innerHTML is similar to the textcontent. the only difference is that text content only returns the text content of an element while innerHTML returns the whole element with html tags also.
-
-  const movs = sort ? movements.slice().sort((a, b) => a - b) : movements; // sorting the array
-
-  movs.forEach(function (mov, i) {
-    const type = mov > 0 ? 'deposit' : 'withdrawal';
-    // template literals are amazing to create html like below
-    const html = `
-  <div class="movements__row">
-    <div class="movements__type movements__type--${type}">${i + 1} ${type}</div>
-    <div class="movements__date">3 days ago</div>
-    <div class="movements__value">${mov}</div>
-  </div>
-`;
-
-    containerMovements.insertAdjacentHTML('afterbegin', html);
-  });
-};
-
-displayMovements(account1.movements);
-/////////////////////////////////////////////////
-/////////////////////////////////////////////////
-// now to add this above generated html to a contianer, we will use insertadjacent element
-
-///////////////
-// computing usernames from the object
-/////////////////
-const createUsernames = function (accs) {
-  accs.forEach(function (acc) {
-    acc.username = acc.owner
-      .toLowerCase()
-      .split(' ')
-      .map(user => user[0])
-      .join('');
-  });
-};
-
-createUsernames(accounts);
-
-/// calculating total balance
-const calcDisplayBalance = function (acc) {
-  acc.balance = acc.movements.reduce((acc, mov) => acc + mov, 0);
-  labelBalance.textContent = `${acc.balance}€`;
-};
-
-// calculating in, out and interest
-const calcDisplaySummary = function (acc) {
-  const incomes = acc.movements
-    .filter(mov => mov > 0)
-    .reduce((acc, mov) => acc + mov, 0);
-
-  const out = acc.movements
-    .filter(val => val < 0)
-    .map(val => Math.abs(val))
-    .reduce((acc, val) => acc + val, 0);
-
-  const interest = acc.movements
-    .filter(mov => mov > 0)
-    .map(deposit => (deposit * acc.interestRate) / 100)
-    .filter(val => val >= 1)
-    .reduce((acc, mov) => acc + mov, 0);
-
-  labelSumIn.textContent = `${incomes}€`;
-  labelSumOut.textContent = `${out}€`;
-  labelSumInterest.textContent = `${interest}€`;
-};
-
-// // using find method // this is really really powerful
-// const account = accounts.find(acc => acc.owner === 'Jessica Davis')
-// console.log(account);
-
-// // doing same with for of loop
-// for (const acc of accounts) {
-//   if (acc.owner === 'Jessica Davis') {
-//     console.log(acc);
-//   }
-// }
-
-/// login feature
-// Event handler
-const updateUI = function (acc) {
-  // display movements
-  displayMovements(acc.movements);
-
-  // display balance
-  calcDisplayBalance(acc);
-
-  //display summary
-  calcDisplaySummary(acc);
-};
-
-let currentAccount;
-
-
-btnLogin.addEventListener('click', function (e) {
-  e.preventDefault(); // prevent form from submitting.
-
-  currentAccount = accounts.find(
-    acc => acc.username === inputLoginUsername.value
-  );
-
-  if (currentAccount?.pin === Number(inputLoginPin.value)) {
-    // emptying the login fields
-    inputLoginUsername.value = inputLoginPin.value = '';
-    inputLoginPin.blur();
-
-    // display UI and message
-    labelWelcome.textContent = `Welcome back ${
-      currentAccount.owner.split(' ')[0]
-    }`;
-    containerApp.style.opacity = 100;
-
-    // updating the ui
-    updateUI(currentAccount);
+document.addEventListener('keydown', function (e) {
+  if (e.key === 'Escape' && !modal.classList.contains('hidden')) {
+    closeModal();
   }
 });
 
-// transfer money
-btnTransfer.addEventListener('click', function (e) {
-  e.preventDefault();
-  const amount = Number(inputTransferAmount.value);
-  const receiverAcc = accounts.find(
-    account => inputTransferTo.value === account.username
-  );
-  console.log(amount, receiverAcc);
+//////////////////////////////////////////////////////////////
 
-  if (
-    amount > 0 &&
-    currentAccount.balance >= amount &&
-    receiverAcc?.username !== currentAccount.username
-  ) {
-    //doing the transefer
-    currentAccount.movements.push(-amount);
-    receiverAcc.movements.push(amount);
+// // selecting entire docuemnt
+// console.log(document.documentElement);
+// console.log(document.head);
+// console.log(document.body);
 
-    // upating the ui
-    updateUI(currentAccount);
-  }
-});
+// // selecting a single element
+// const header = document.querySelector('.header');
 
-// close account - find index method of array - works same as find, it returns the index of found eleemnt and note the element itself
-btnClose.addEventListener('click', function (e) {
-  e.preventDefault(); // to prevent it from ...
+// // selecting all element
+// const allSections = document.querySelectorAll('.section');
 
-  if (
-    inputCloseUsername.value === currentAccount.username &&
-    Number(inputClosePin.value) === currentAccount.pin
-  ) {
-    const index = accounts.findIndex(
-      acc => acc.username === currentAccount.username
-    );
+// console.log(allSections);
 
-    // deleting the account
-    accounts.splice(index, 1);
+// document.getElementById('section--1');
+// const allButtons = document.getElementsByTagName('button'); // this method returns an html collection different from nodelist which we get from queryselectorALL
+// // html collection = when the dom changes this html collection changes immediately which is not the case with nodelist
 
-    // hiding the ui
-    containerApp.style.opacity = 0;
-  }
+// console.log(allButtons);
 
-  // clearing the input fields.- it works only after reading the value from input field. this was a freaking bug.
-  inputLoginUsername.value = inputLoginPin.value = '';
-});
+// document.getElementsByClassName('btn'); // this also return html collections
 
-// some method -- requesting a bank loan
+// // creating and inserting elements
+// // .insertAdjacentHTML
 
-btnLoan.addEventListener('click', function (e) {
-  e.preventDefault();
+// const message = document.createElement('div');
+// message.classList.add('cookie-message');
+// message.textContent =
+//   'We use cookies for imporvve functionality and analytics.';
+// message.innerHTML = `'We use cookies for imporvve functionality and analytics.'
+//   <button class="btn btn--close-cookie">Got it! </button>
+// `;
 
-  const amount = Number(inputLoanAmount.value);
-  if (amount > 0 && currentAccount.movements.some(mov => mov >= 0.1 * amount)) {
-    // Add the movement
-    currentAccount.movements.push(amount);
+// // header.prepend(message) // add first child
+// header.append(message); // add last child // the message is a live element living in the dom. so it cannot be present at two places at a time
 
-    // update the ui
-    updateUI(currentAccount);
-  }
+// // to make it visible multiple places// we first have to copy the elemetn
+// // header.append(message.cloneNode(true))
 
-  inputLoanAmount.value = '';
-});
+// // header.before(message); // add the element before header element. they both will be siblins . same with after.
+// // header.after(message)
 
-// using flat method to calculate the total movments.
-const accountMovements = accounts.map(acc => acc.movements); // this will return an array of movements of different acconts
-const allMovements = accountMovements.flat().reduce((acc, mov) => acc + mov, 0); // this will give total movements of all the accounts and sum it all up.
-// console.log(allMovements);
+// // deleting elements
+// document
+//   .querySelector('.btn--close-cookie')
+//   .addEventListener('click', function () {
+//     message.remove();
+//   });
 
-// flatmap combines both flat and map methods of array
-const overallBalance2 = accounts.flatMap(acc => acc.movements);
-// console.log(overallBalance2);
-// flatmap only goes 1 level deep and we cannot change it. for more nested use flat.
+// // setting style using js
+// message.style.backgroundColor = '#37383d';
+// message.style.width = '120%'; // these styles are set as inline styles, remember this.
 
-let isSorted = false;
-// sorting movements
-btnSort.addEventListener('click', function (e) {
-  e.preventDefault();
-  displayMovements(currentAccount.movements, !isSorted);
-  isSorted = !isSorted;
-});
+// /// note that we cannot read the style using .style method. we can get only the inline style using this method. we cannot get a style that is hidden inside of a class.
 
-// using arrays.from method
-labelBalance.addEventListener('click', function () {
-  const movementsUI = Array.from(
-    document.querySelectorAll('.movements__value'),
-    el => Number(el.textContent.replace('€', ''))
-  );
+// //but we can still get the style
+// // console.log(getComputedStyle(message)); // we get the object with all the style
+// console.log(getComputedStyle(message).color); // we get the object with all the style
+// console.log(getComputedStyle(message).height); // we get the height from it
 
-  console.log(movementsUI);
-});
+// message.style.height = Number.parseFloat(getComputedStyle(message).height, 10) + 40 + 'px';  // this parsefloat too that number only and added 40 and added px string
 
-// we can also use spread operator to convert nodelist to array
-// but array.from is a nicer way to do so
+// // css variables / custom properties // we can also change the css variable from javascript
+// document.documentElement.style.setProperty('--color-primary', 'orangered')
 
-/// Arryas method practice
-// 1.
-// storing all the movements into one big array
-const bankDepositSum = accounts
-  .flatMap(acc => acc.movements)
-  .filter(mov => mov > 0)
-  .reduce((sum, curr) => sum + curr, 0);
+// // Attributes // src, href, class, id all are attributes // in js we can access and change these attribute
+// const logo = document.querySelector('.nav__logo')
+// console.log(logo.alt);
+// console.log(logo.src); // this will give absolute url
+// console.log(logo.className); // returns the classname of the selected element
 
-// console.log(bankDepositSum);
+// // only standard attribute can be read this way // we can't access logo.designer
 
-// 2. get all those movements which is at least 1000
-// const numDeposits1000 = accounts
-// .flatMap(acc => acc.movements)
-// .filter(mov => mov >= 1000)
-// .length
+// // to read custom attribute i.e non standard attribute
+// // console.log(logo.designer); // this won't work
+// console.log(logo.getAttribute('designer'));  // now it will read the designer attribute form .nav__logo class element.
 
-// console.log(numDeposits1000);
+// // apart from reading the value of attributes we can also set the attribute from here
+// logo.alt = 'Beautiful minimalist logo'
+// console.log(logo.alt);
 
-// other way using reduce
-const numDeposits1000 = accounts
-  .flatMap(acc => acc.movements)
-  .reduce((count, curr) => (curr >= 1000 ? ++count : count), 0);
+// // opposite of getattribute
+// logo.setAttribute('company', 'Bankist') // setting a new attribute to the logo class
+// console.log(logo.getAttribute('company')); // reading the value of new attribute
 
-// count + 1 = count++ would not work here hehe. we can use ++count here.
-// console.log(numDeposits1000);
+// logo.getAttribute('src') // to get relative url // same is true of href link.
 
-// let a = 10;
-// console.log(a++);
-// console.log(a);
+// const link = document.querySelector('.twitter-link')
+// console.log(link.href); // this will return relative url
+// console.log(link.getAttribute('href')); // this will return absolute url
 
-// 3. create an object from reduce methods.
-const { deposits, withdrawals } = accounts // imeediatly destructuring
-  .flatMap(acc => acc.movements)
-  .reduce(
-    (sums, curr) => {
-      // curr > 0 ? (sums.deposits += curr) : (sums.withdrawals += curr);
+// // Data attributes // they are alwaays stored in
+// console.log(logo.dataset.versionNumber); // versionNumber should be in camel case // used to store the data in html code
 
-      sums[curr > 0 ? 'deposits' : 'withdrawals'] += curr;
+// // classes
+// logo.classList.add() // to add a class
+// logo.classList.remove() // to remove a class
+// logo.classList.toggle() // to add a class if it is not available or to remove a class if it is available to the element
+// logo.classList.contains() // check whether the passed class includes
 
-      return sums; // in the array funcitons, if we use a block then we need to explicitly write return keyword. never forget this.
-    },
-    { deposits: 0, withdrawals: 0 }
+// // dont use
+// logo.className = 'jonas' // this will override all the classes // using this only one class is added.
+
+//////////////////////////////////////////////
+// implementing smooth scrolling
+
+const btnScrollTo = document.querySelector('.btn--scroll-to');
+const section1 = document.querySelector('#section--1');
+
+btnScrollTo.addEventListener('click', function (e) {
+  const s1coords = section1.getBoundingClientRect(); // getting the coordinates
+  console.log(s1coords);
+
+  console.log(e.target.getBoundingClientRect());
+
+  console.log('current scroll (x/y)', window.pageXOffset, window.pageYOffset);
+
+  console.log(
+    'height/width of viewport',
+    document.documentElement.clientHeight,
+    document.documentElement.clientWidth
   );
 
-// console.log(sums);
-// console.log(deposits, withdrawals);
+  // // scrolling
+  // window.scrollTo(
+  //   s1coords.left + window.pageXOffset,
+  //   s1coords.top + window.pageYOffset
+  // );
 
-// 4. simple function that convert any string to title case
-// this is a nice title -> This Is a Nice Title
+  // improving above scroll // old school way // manual calcualtion
+  // window.scrollTo({
+  //  left: s1coords.left + window.pageXOffset,
+  //  top: s1coords.top + window.pageYOffset,
+  //  behavior: 'smooth',
+  // })
 
-// const convertTitleCase = function (title) {
-//   const capitalize = str => str[0].toUpperCase() + str.slice(1);
+  // more modern way -  lol😂
+  section1.scrollIntoView({ behavior: 'smooth' }); // this only woks in modern browser.
+});
 
-//   const exceptions = ['a', 'an', 'the', 'but', 'or', 'on', 'in', 'with', 'and'];
+///////////////////////////////
+// types of event and event handler
+////////////////////////////////
+// event -
 
-//   const titleCase = title
-//     .toLowerCase()
-//     .split(' ')
-//     .map(word => (exceptions.includes(word) ? word : capitalize(word)))
-//     .join(' ');
-//   return capitalize(titleCase);
+// const h1 = document.querySelector('h1');
+
+// const alertH1 = function (e) {
+//   alert('addeventlistener: gread ! you are reading the heading :D'); // when we hover over that element it it display this promt message to the user.
+
+//   // after we listen the event, we delete it
+//   h1.removeEventListener('mouseenter', alertH1); // by using this we make an event to listen only once.
 // };
 
-// console.log(convertTitleCase('this is a nice title'));
-// console.log(convertTitleCase('this is a LONG title but not too long'));
-// console.log(convertTitleCase('and here is another title with an EXAMPLE'));
+// // mouseenter event is similar to hover event in css
+// h1.addEventListener('mouseenter', alertH1);
 
-// adding dates
-// day/month/year
+// setTimeout(() => {
+//   h1.removeEventListener('mouseenter', 4000);
+// });
 
-const now = new Date();
-const day = `${now.getDate()}`.padStart(2, 0);
-const month = `${now.getMonth() + 1}`.padStart(2, 0); // zero based
-const year = now.getFullYear();
-const hour = now.getHours();
-const min = now.getMinutes();
-labelDate.textContent = `${day}/${month}/${year}, ${hour}:${min}`;
+// addeventlistener allow us to add multiple event listener to the elemnt.
+// we can actually remove event listener when we don't need it.
+//////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////
+// very important propert of js - bubbling and capturing
 
+// rgb(255,255,255)
 
+// const randomInt = (min, max) => Math.floor(Math.random() * (max - min + 1) + min);
+
+// const randomColor = () =>
+//   `rgb(${randomInt(0, 255)},${randomInt(0, 255)},${randomInt(0, 255)})`;
+
+// console.log(randomColor()); // this will return a random color.
+
+// document.querySelector('.nav__link').addEventListener('click', function(e){
+//   this.style.backgroundColor = randomColor()   // this will point to the element on which event is occuring
+
+//   console.log('LINK', e.target); // this is where the event happenend
+
+// })
+
+// // parent of nav link
+// document.querySelector('.nav__links').addEventListener('click', function(e){
+//   this.style.backgroundColor = randomColor()
+//   console.log('LINK', e.target); // this is where the event happenend
+
+// })
+
+// // parent of navlinks
+// document.querySelector('.nav').addEventListener('click', function(e){
+//   this.style.backgroundColor = randomColor()
+//   console.log('LINK', e.target); // this is where the event happenend
+
+// })
+
+//////////////////////////////////////////////////////////
+// Event Delegation implementation in page navigation.
+//////////////////////////////////////////////////////////////
+
+// document.querySelectorAll('.nav__link').forEach(el => {
+//   el.addEventListener('click', function (e) {
+//     e.preventDefault();
+//     console.log(this);
+
+//     const id = this.getAttribute('href');
+//     console.log(id);
+
+//     document.querySelector(id).scrollIntoView({ behavior: 'smooth' });
+//   });
+// });
+
+// optimized way
+
+// 1. Add event listener to common parent element.
+// 2. Determine what element originated the event.
+
+document.querySelector('.nav__links').addEventListener('click', function (e) {
+  // console.log(e.target);
+  // e.preventDefault();
+
+  if (e.target.classList.contains('nav__link')) {
+    console.log('link');
+    const id = e.target.getAttribute('href');
+    console.log(id);
+    document.querySelector(id).scrollIntoView({ behavior: 'smooth' });
+  }
+});
+
+// this techniques really comes handy when we are working with elements that are added dynamically while using using
+// the application, so it's not possible to add event handlers on elements that don't exist at the beginning by using event delegation.
+
+//////////////////////////////////////////////////////
+// DOM TRAVERSING // very important.
+// //////////////////////////////////////////////////////////
+// const h1 = document.querySelector('h1');
+
+// // Going downwards : selecting child element
+// console.log(h1.querySelectorAll('.highlight'));
+// console.log(h1.childNodes);
+// console.log(h1.children); //gives the html collection which is a live collection // only works for direct children
+
+// h1.firstElementChild.style.color = 'white';
+// h1.lastElementChild.style.color = 'orangered';
+
+// // Going upwards: selecting parents
+// console.log(h1.parentNode);
+// console.log(h1.parentElement);
+
+// h1.closest('.header').style.background = 'var(--gradient-secondary)'; // very important // used frequently in event delegation// we have used css variable here.
+
+// h1.closest('h1').style.background = 'var(--gradient-primary)';
+
+// // Going sideways: siblings
+// console.log(h1.previousElementSibling);
+// console.log(h1.nextElementSibling);
+
+// console.log(h1.previousSibling);
+// console.log(h1.nextSibling);
+
+// console.log(h1.parentElement.children);
+
+// [...h1.parentElement.children].forEach(el => {
+//   if (el !== h1) {
+//     el.style.transform = 'scale(0.5)';
+//   }
+// });
+
+// ////////////////////////////////////////////////////
+// Building a tabbed Component // revise again // tricky to implement
+////////////////////////////////////////////////////
+
+const tabs = document.querySelectorAll('.operations__tab');
+const tabsContainer = document.querySelector('.operations__tab-container');
+const tabsContent = document.querySelectorAll('.operations__content');
+
+// tabs.forEach(element => {
+//   element.addEventListener('click', ()=>{
+//     console.log('TAB');
+
+//   })
+// });
+
+//using event delegation
+tabsContainer.addEventListener('click', function (e) {
+  const clicked = e.target.closest('.operations__tab');
+  // console.log(clicked);
+
+  // Guard clause // new thing
+  if (!clicked) {
+    return;
+  }
+
+  // Active tab
+  tabs.forEach(tab => tab.classList.remove('operations__tab--active')); // this is something that we do usually
+  clicked.classList.add('operations__tab--active'); // do not put . while adding or removeing the class // very silly mistake
+
+  // console.log(clicked.dataset.tab);
+
+  // removing active class for all content
+  tabsContent.forEach(content => {
+    content.classList.remove('operations__content--active');
+  });
+
+  // Activate content area
+  document
+    .querySelector(`.operations__content--${clicked.dataset.tab}`)
+    .classList.add('operations__content--active');
+});
+
+/////////////////////////////////////////////////////////
+//Passing Arguments to Event Handlers /// menu fade animation
+////////////////////////////////////////////////////////
+
+const nav = document.querySelector('.nav');
+
+const handler = function (event, opacity) {
+  const e = event;
+  if (e.target.classList.contains('nav__link')) {
+    const link = e.target;
+
+    const siblings = link.closest('.nav').querySelectorAll('.nav__link');
+    const logo = link.closest('.nav').querySelector('img');
+
+    siblings.forEach(el => {
+      if (el !== link) {
+        el.style.opacity = this;
+      }
+    });
+
+    logo.style.opacity = this;
+  }
+};
+
+// the problem is that how can we pass  the argument required by the handler function.
+// nav.addEventListener('mouseover', function (e) {
+//   handler(e, 0.5)
+// }); // mouse over do bubbling while mouseenter doenst
+
+// nav.addEventListener('mouseout', function (e) {
+//   handler(e, 1)
+// });
+
+// above code is fine, but we can do even better. by removing anonymous function call
+// using bind method
+// passing "argument" into handler
+nav.addEventListener('mouseover', handler.bind(0.5));
+
+nav.addEventListener('mouseout', handler.bind(1));
+
+/////////////////////////////////////////////////////
+// implementing sticky navigation// the scroll event
+/////////////////////////////////////////////////////
+// scroll event is available on window and not on object.
+// scroll event is not that efficient so it should be avoided.
+
+// const initialCoords = section1.getBoundingClientRect()
+// console.log(initialCoords);
+
+// window.addEventListener('scroll', function(){
+//   // console.log(this.window.scrollY); // we cannot hardcode the value,// we have to calculate dynamically
+
+//   if (this.window.scrollY > initialCoords.top) {
+//     nav.classList.add('sticky')
+//   } else {
+//     nav.classList.remove('sticky')
+//   }
+// })
+
+/////////////////////
+///Optimizing sticky nav using new intersection observer API
+//////////////////
+
+// const obsCallback = function(entries, observer){
+//   entries.forEach(entry => {
+//     console.log(entry);
+//   })
+
+// }
+
+// const obsOptions = {
+//   root: null,
+//   threshold: 0.1,   // means 10 percent of the element // we can specify array of thresholds here as well
+// }
+
+// const observer = new IntersectionObserver(obsCallback, obsOptions);
+// observer.observe(section1);
+
+const header = document.querySelector('.header');
+const navHeight = nav.getBoundingClientRect().height;
+// console.log(navHeight);
+
+const stickynav = function (entries) {
+  const [entry] = entries;
+  // console.log(entry);
+
+  if (!entry.isIntersecting) {
+    nav.classList.add('sticky');
+  } else {
+    nav.classList.remove('sticky');
+  }
+};
+
+const headerObserver = new IntersectionObserver(stickynav, {
+  root: null,
+  threshold: 0,
+  rootMargin: `-${navHeight}px`, // only px is supported no rem or em or percentage.
+});
+
+headerObserver.observe(header);
+
+//////////////////////////////////
+/// implementing reveling elements on scroll - intersectionObserverapi
+////////////////////////////////////
+const revealSection = function (entries, observer) {
+  const [entry] = entries;
+
+  if (!entry.isIntersecting) {
+    return;
+  }
+  entry.target.classList.remove('section--hidden');
+  observer.unobserve(entry.target);
+};
+
+const allSections = document.querySelectorAll('.section');
+
+const sectionObserver = new IntersectionObserver(revealSection, {
+  root: null,
+  threshold: 0.15,
+});
+
+allSections.forEach(function (section) {
+  sectionObserver.observe(section);
+  // section.classList.add('section--hidden');
+});
+
+///////////////////////////////////////////////
+//////lazy loading images/////
+////////////////////////////////////////////
+
+const imgTargets = document.querySelectorAll('img[data-src]'); // we are selecting those img tag which have data-src property
+
+const loadImg = function (entries, observer) {
+  const [entry] = entries;
+
+  if (!entry.isIntersecting) {
+    return;
+  }
+
+  // replace src with data-src
+  entry.target.src = entry.target.dataset.src;
+
+  entry.target.addEventListener('load', function () {
+    entry.target.classList.remove('lazy-img');
+  });
+
+  observer.unobserve(entry.target);
+};
+
+const imgObserver = new IntersectionObserver(loadImg, {
+  root: null,
+  threshold: 0,
+  rootMargin: '-200px',
+});
+
+imgTargets.forEach(function (img) {
+  imgObserver.observe(img);
+});
+
+////////////////////////////
+//implementing slider
+//////////////////////////////
+const slides = document.querySelectorAll('.slide');
+const btnLeft = document.querySelector('.slider__btn--left');
+const btnRight = document.querySelector('.slider__btn--right');
+
+let curSlide = 0;
+const maxSlide = slides.length; // nodelist has length property as well
+
+// slides.forEach((s, i) => {
+//   s.style.transform = `translateX(${100 * i}%)`;
+// });
+
+const goToSlide = function (slide) {
+  slides.forEach((s, i) => {
+    s.style.transform = `translateX(${100 * (i - slide)}%)`;
+  });
+};
+
+goToSlide(0); // alternative of above commented code
+
+// Next slide
+const nextSlide = function () {
+  if (curSlide === maxSlide - 1) {
+    curSlide = 0;
+  } else {
+    curSlide++;
+  }
+  goToSlide(curSlide);
+};
+
+//previous slide
+const prevSlide = function () {
+  if (curSlide === 0) {
+    curSlide = maxSlide - 1;
+  } else {
+    curSlide--;
+  }
+  goToSlide(curSlide);
+};
+
+btnRight.addEventListener('click', nextSlide);
+btnLeft.addEventListener('click', prevSlide);
